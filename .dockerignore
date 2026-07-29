@@ -1,6 +1,29 @@
+# Dependencies — reinstalled inside the image, never copied from the host
 node_modules
+npm-debug.log
+
+# Secrets — must never be baked into an image
 .env
+.env.*
+
+# Docker's own files — not needed at runtime
 Dockerfile
 .dockerignore
+
+# VCS and CI
 .git
 .gitignore
+.github
+
+# Deployment and docs — not application code
+helm
+learn-k8s
+README.md
+
+# Editor and OS noise
+.vscode
+.idea
+.DS_Store
+*.swp
+*.tmp
+*.log
