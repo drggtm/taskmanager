@@ -25,6 +25,27 @@ jobs:
 
       - name: Run Claude Code Review
         uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          prompt: "Review this PR for bugs, security issues, and style problems. Be concise."
+          claude_args: |
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr review:*)"
+          prompt: |
+            Review pull request #${{ github.event.issue.number || github.event.pull_request.number }}
+            in ${{ github.repository }} for bugs, security issues, and style problems.
+            Be concise.
+
+            Read the diff with `gh pr diff`, then always finish with one of these
+            two outcomes — never end without posting something:
+
+            1. You found problems worth fixing: post them with
+               `gh pr comment <number> --body "..."`.
+            2. The change looks good: post a short comment saying so with
+               `gh pr comment <number> --body "..."`, then approve it with
+               `gh pr review <number> --approve --body "..."`.
+
+            Approve whenever you find nothing that needs changing. Minor style
+            preferences and pre-existing issues the PR did not introduce are not
+            reasons to withhold approval — mention them in the comment and
+            approve anyway.
