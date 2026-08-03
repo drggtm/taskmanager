@@ -36,7 +36,16 @@ jobs:
             in ${{ github.repository }} for bugs, security issues, and style problems.
             Be concise.
 
-            Read the diff with `gh pr diff`. Post your review by running
-            `gh pr comment <number> --body "..."`. If nothing needs changing, say so
-            in a short comment and run `gh pr review <number> --approve`.
-            You must post a comment before finishing, even if the review is clean.
+            Read the diff with `gh pr diff`, then always finish with one of these
+            two outcomes — never end without posting something:
+
+            1. You found problems worth fixing: post them with
+               `gh pr comment <number> --body "..."`.
+            2. The change looks good: post a short comment saying so with
+               `gh pr comment <number> --body "..."`, then approve it with
+               `gh pr review <number> --approve --body "..."`.
+
+            Approve whenever you find nothing that needs changing. Minor style
+            preferences and pre-existing issues the PR did not introduce are not
+            reasons to withhold approval — mention them in the comment and
+            approve anyway.
