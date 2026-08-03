@@ -25,11 +25,18 @@ jobs:
 
       - name: Run Claude Code Review
         uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: |
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr review:*)"
           prompt: |
-            Review this PR for bugs, security issues, and style problems. Be concise.
+            Review pull request #${{ github.event.issue.number || github.event.pull_request.number }}
+            in ${{ github.repository }} for bugs, security issues, and style problems.
+            Be concise.
 
-            Post the review as a comment on the pull request, and leave inline
-            comments on specific lines where the feedback is line-specific. If
-            nothing needs changing, say so in a short comment and also approve the pr.
+            Read the diff with `gh pr diff`. Post your review by running
+            `gh pr comment <number> --body "..."`. If nothing needs changing, say so
+            in a short comment and run `gh pr review <number> --approve`.
+            You must post a comment before finishing, even if the review is clean.
