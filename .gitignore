@@ -5,5 +5,8 @@ npm-debug.log
 .vscode/ 
 .idea/ logs/ 
 *.log 
-*.tmp 
+*.tmp
 *.swp
+
+# local learning notes
+learn-k8s/
