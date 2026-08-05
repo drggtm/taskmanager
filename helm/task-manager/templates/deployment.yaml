@@ -14,8 +14,8 @@ spec:
   template:
     metadata:
       annotations:
-        # Roll the pods when the generated Secret changes, so a new MONGO_URI
-        # actually reaches the containers instead of waiting for the next deploy.
+        {{- /* Roll the pods when the generated Secret changes, so a new MONGO_URI
+               actually reaches the containers instead of waiting for the next deploy. */}}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
       labels:
         {{- include "task-manager.selectorLabels" . | nindent 8 }}
