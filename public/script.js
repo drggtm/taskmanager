@@ -6,11 +6,13 @@ async function fetchTasks() {
       taskList.innerHTML = '';
       tasks.forEach(task => {
         const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class="p-3">${task.title}</td>
-          <td class="p-3">${task.description || ''}</td>
-          <td class="p-3">${new Date(task.createdAt).toLocaleString()}</td>
-        `;
+        const cells = [task.title, task.description || '', new Date(task.createdAt).toLocaleString()];
+        for (const value of cells) {
+          const cell = document.createElement('td');
+          cell.className = 'p-3';
+          cell.textContent = value;
+          row.appendChild(cell);
+        }
         taskList.appendChild(row);
       });
     } catch (err) {

@@ -22,9 +22,9 @@ mongodb:
   existingSecret: ""
   existingSecretKey: mongo-uri
 
-# Path the kubelet probes. "/" serves the static page and returns 200 even when
-# MongoDB is unreachable — point this at a real health endpoint once one exists.
-probePath: /
+probes:
+  livenessPath: /healthz
+  readinessPath: /readyz
 
 resources:
   limits:

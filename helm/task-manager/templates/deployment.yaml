@@ -45,13 +45,13 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           livenessProbe:
             httpGet:
-              path: {{ .Values.probePath }}
+              path: {{ .Values.probes.livenessPath }}
               port: http
             initialDelaySeconds: 10
             periodSeconds: 15
           readinessProbe:
             httpGet:
-              path: {{ .Values.probePath }}
+              path: {{ .Values.probes.readinessPath }}
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
