@@ -1,0 +1,52 @@
+#App copies — ignored when autoscaling.enabled is true
+replicaCount: 2
+
+#Docker image
+image:
+  repository: ghcr.io/placeholder/task-manager
+  tag: latest
+  pullPolicy: IfNotPresent #if image not on server
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+
+mongodb:
+  # Used only when existingSecret is empty — the chart then creates the Secret itself.
+  # This default assumes a MongoDB Service named "mongodb" in the same namespace.
+  # Never commit a real connection string here. Override it at install time:
+  #   --set mongodb.uri='mongodb+srv://...'
+  # or point existingSecret at a Secret created outside the chart.
+  uri: mongodb://mongodb:27017/taskmanager
+  existingSecret: ""
+  existingSecretKey: mongo-uri
+
+# Path the kubelet probes. "/" serves the static page and returns 200 even when
+# MongoDB is unreachable — point this at a real health endpoint once one exists.
+probePath: /
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: task-manager.local
+      paths:
+        - path: /
+          pathType: Prefix

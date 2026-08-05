@@ -1,0 +1,9 @@
+apiVersion: v2
+name: task-manager
+description: Helm chart for the task-manager app (Node.js + Express + MongoDB)
+type: application
+
+# version    — the chart's own version, bumped whenever templates change
+# appVersion — the version of the app image being deployed
+version: 0.1.0
+appVersion: "1.0.0"
