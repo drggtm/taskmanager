@@ -13,6 +13,14 @@ async function fetchTasks() {
           cell.textContent = value;
           row.appendChild(cell);
         }
+        const actions = document.createElement('td');
+        actions.className = 'p-3';
+        const button = document.createElement('button');
+        button.className = 'bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600';
+        button.textContent = 'Delete';
+        button.onclick = () => deleteTask(task._id);
+        actions.appendChild(button);
+        row.appendChild(actions);
         taskList.appendChild(row);
       });
     } catch (err) {
@@ -48,5 +56,21 @@ async function fetchTasks() {
     }
   }
   
+  async function deleteTask(id) {
+    if (!confirm('Delete this task?')) return;
+
+    try {
+      const response = await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+      if (response.ok) {
+        fetchTasks();
+      } else {
+        alert('Error deleting task');
+      }
+    } catch (err) {
+      console.error('Error deleting task:', err);
+      alert('Error deleting task');
+    }
+  }
+
   // Load tasks on page load
   document.addEventListener('DOMContentLoaded', fetchTasks);
