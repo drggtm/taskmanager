@@ -13,7 +13,7 @@ behave correctly when the database goes away.
 |---|---|
 | Runtime | Node.js 18 (alpine), Express 5 |
 | Data | MongoDB via Mongoose 8 |
-| Frontend | Static HTML + vanilla JS, Tailwind via CDN |
+| Frontend | Static HTML + vanilla JS, Tailwind via CDN — list, add, delete |
 | Image | Multi-stage Docker build, runs as non-root `nodeuser` |
 | Packaging | Helm chart (`helm/task-manager`) |
 | CI | GitHub Actions → GitHub Container Registry |
@@ -30,6 +30,10 @@ behave correctly when the database goes away.
 | GET | `/` | Static frontend | 200 | — |
 
 `POST` body: `{ "title": "required", "description": "optional" }`
+
+The page at `/` drives all three: a form to add a task, a table listing them, and
+a Delete button per row. Rows are built with `textContent`, not `innerHTML`, so a
+task title containing markup is rendered as text rather than executed.
 
 ### Why two health endpoints
 
@@ -104,7 +108,9 @@ helm install task-manager helm/task-manager --set mongodb.existingSecret=mongo-c
 | `autoscaling.enabled` | `false` | Creates an HPA on CPU when true |
 | `ingress.enabled` | `true` | |
 | `ingress.className` | `nginx` | See note below |
+| `ingress.annotations` | `nginx.ingress.kubernetes.io/rewrite-target: /` | Replace when switching ingress controller |
 | `ingress.hosts` | `task-manager.local` | |
+| `nameOverride` / `fullnameOverride` | unset | Override the generated resource names |
 
 **Ingress class matters.** The default `nginx` suits minikube (`minikube addons
 enable ingress`). On k3s, which ships Traefik, use `--set
@@ -133,8 +139,9 @@ Installed and exercised on a single-node k3s cluster (v1.36.2):
 `ghcr.io/<owner>/<repo>` on pushes to the `frontend` branch, tagging by branch,
 PR, semver, and short SHA, with GitHub Actions layer caching.
 
-`.github/workflows/claude.yml` runs an automated review on pull requests opened
-by the repository owner.
+`.github/workflows/claude.yml` runs an automated review when the repository owner
+opens a pull request, or comments `@claude` on one. Both paths are gated on
+`author_association == 'OWNER'`, so forks cannot trigger it.
 
 ## Project structure
 
@@ -154,8 +161,10 @@ by the repository owner.
 │       ├── secret.yaml
 │       └── hpa.yaml
 ├── models/Task.js
-├── public/                  # static frontend
+├── public/                  # static frontend (index.html + script.js)
 ├── Dockerfile               # multi-stage, non-root
+├── .dockerignore            # keeps .env, .git, helm out of the image
+├── .env.example
 ├── server.js
 └── package.json
 ```
