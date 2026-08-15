@@ -120,6 +120,34 @@ created but never gets an ADDRESS and no error is reported.
 If `mongodb.uri` is empty and no `existingSecret` is set, the chart fails at
 render time rather than installing a broken release.
 
+## Kubernetes (raw manifests)
+
+`k8s/` is a self-contained alternative to the chart, aimed at local minikube
+work. Unlike the chart it also runs MongoDB in-cluster, so there is no external
+database to point at:
+
+```sh
+eval $(minikube docker-env)
+docker build -t task-manager:v1 .
+kubectl apply -f k8s/
+kubectl port-forward svc/task-manager 3000:3000
+```
+
+The build must run inside `minikube docker-env` (or the image loaded with
+`minikube image load`), because `imagePullPolicy: IfNotPresent` with the local
+tag `task-manager:v1` never reaches a registry.
+
+Differences from the chart, deliberate for a local cluster: `MONGO_URI` is a
+plain env var rather than a Secret (the in-cluster URI carries no credentials),
+the Service is ClusterIP with no Ingress, and MongoDB is backed by a 1Gi PVC
+with `strategy: Recreate`.
+
+Both Deployments set requests and limits. `task-manager` points **liveness** at
+`/readyz`, not `/healthz` — the app does not retry a failed initial mongoose
+connection, so a pod that loses the startup race has to be restarted to recover.
+`failureThreshold: 6` with a 20s period gives MongoDB about two minutes to come
+back before a restart is triggered.
+
 ## Verified deployment
 
 Installed and exercised on a single-node k3s cluster (v1.36.2):
@@ -160,6 +188,12 @@ opens a pull request, or comments `@claude` on one. Both paths are gated on
 │       ├── ingress.yaml
 │       ├── secret.yaml
 │       └── hpa.yaml
+├── k8s/                      # raw manifests: app + in-cluster MongoDB
+│   ├── mongo-deployment.yaml
+│   ├── mongo-pvc.yaml
+│   ├── mongo-service.yaml
+│   ├── task-manager-deployment.yaml
+│   └── task-manager-service.yaml
 ├── models/Task.js
 ├── public/                  # static frontend (index.html + script.js)
 ├── Dockerfile               # multi-stage, non-root
