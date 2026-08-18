@@ -24,16 +24,23 @@ behave correctly when the database goes away.
 |---|---|---|---|---|
 | GET | `/api/tasks` | List all tasks | 200 | 500 |
 | POST | `/api/tasks` | Create a task | 201 | 400 (missing title / malformed JSON) |
+| PATCH | `/api/tasks/:id` | Mark a task done / not done | 200 | 404 (not found), 400 (invalid id or non-boolean `done`) |
 | DELETE | `/api/tasks/:id` | Delete a task | 204 | 404 (not found), 400 (invalid id) |
 | GET | `/healthz` | Liveness — process is up | 200 | — |
 | GET | `/readyz` | Readiness — MongoDB reachable | 200 | 503 |
 | GET | `/` | Static frontend | 200 | — |
 
 `POST` body: `{ "title": "required", "description": "optional" }`
+`PATCH` body: `{ "done": true }` — `done` is the only mutable field.
 
-The page at `/` drives all three: a form to add a task, a table listing them, and
-a Delete button per row. Rows are built with `textContent`, not `innerHTML`, so a
-task title containing markup is rendered as text rather than executed.
+The page at `/` drives all four: a form to add a task, a table listing them, a
+Done checkbox per row, and a Delete button per row. Rows are built with
+`textContent`, not `innerHTML`, so a task title containing markup is rendered as
+text rather than executed.
+
+Tasks created before this field existed have no `done` key in MongoDB. Mongoose
+reads a missing `done` as the schema default `false`, so old documents render as
+not-done without a migration.
 
 ### Why two health endpoints
 

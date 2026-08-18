@@ -6,10 +6,21 @@ async function fetchTasks() {
       taskList.innerHTML = '';
       tasks.forEach(task => {
         const row = document.createElement('tr');
+
+        const doneCell = document.createElement('td');
+        doneCell.className = 'p-3';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'h-4 w-4';
+        checkbox.checked = Boolean(task.done);
+        checkbox.onchange = () => toggleTask(task._id, checkbox.checked);
+        doneCell.appendChild(checkbox);
+        row.appendChild(doneCell);
+
         const cells = [task.title, task.description || '', new Date(task.createdAt).toLocaleString()];
         for (const value of cells) {
           const cell = document.createElement('td');
-          cell.className = 'p-3';
+          cell.className = task.done ? 'p-3 line-through text-gray-400' : 'p-3';
           cell.textContent = value;
           row.appendChild(cell);
         }
@@ -56,6 +67,24 @@ async function fetchTasks() {
     }
   }
   
+  async function toggleTask(id, done) {
+    try {
+      const response = await fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ done })
+      });
+      if (!response.ok) {
+        alert('Error updating task');
+      }
+      fetchTasks();
+    } catch (err) {
+      console.error('Error updating task:', err);
+      alert('Error updating task');
+      fetchTasks();
+    }
+  }
+
   async function deleteTask(id) {
     if (!confirm('Delete this task?')) return;
 
