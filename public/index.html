@@ -8,7 +8,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
   <h1 class="text-3xl font-bold mb-6">Task Manager</h1>
-  
+
   <!-- Form to add tasks -->
   <div class="w-full max-w-md bg-white p-6 rounded-lg shadow-md mb-6">
     <h2 class="text-xl font-semibold mb-4">Add New Task</h2>
@@ -21,19 +21,44 @@
         <label for="description" class="block text-sm font-medium">Description</label>
         <textarea id="description" class="w-full p-2 border rounded-md" placeholder="Enter task description"></textarea>
       </div>
+      <div class="flex gap-4">
+        <div class="flex-1">
+          <label for="priority" class="block text-sm font-medium">Priority</label>
+          <select id="priority" class="w-full p-2 border rounded-md">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        <div class="flex-1">
+          <label for="dueDate" class="block text-sm font-medium">Due date</label>
+          <input id="dueDate" type="date" class="w-full p-2 border rounded-md">
+        </div>
+      </div>
       <button onclick="addTask()" class="w-full bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600">Add Task</button>
     </div>
   </div>
-  
+
   <!-- Task list -->
-  <div class="w-full max-w-2xl">
-    <h2 class="text-xl font-semibold mb-4">Tasks</h2>
+  <div class="w-full max-w-3xl">
+    <div class="flex flex-wrap items-center gap-2 mb-4">
+      <h2 class="text-xl font-semibold mr-auto">Tasks <span id="taskCount" class="text-sm font-normal text-gray-500"></span></h2>
+      <input id="search" type="search" class="p-2 border rounded-md" placeholder="Search titles">
+      <div class="flex rounded-md overflow-hidden border">
+        <button data-filter="all" class="filter px-3 py-2 bg-blue-500 text-white">All</button>
+        <button data-filter="false" class="filter px-3 py-2 bg-white hover:bg-gray-100">Active</button>
+        <button data-filter="true" class="filter px-3 py-2 bg-white hover:bg-gray-100">Done</button>
+      </div>
+      <button onclick="clearCompleted()" class="px-3 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-800">Clear done</button>
+    </div>
     <table id="taskTable" class="w-full bg-white rounded-lg shadow-md">
       <thead>
         <tr class="bg-gray-200">
           <th class="p-3 text-left">Done</th>
           <th class="p-3 text-left">Title</th>
           <th class="p-3 text-left">Description</th>
+          <th class="p-3 text-left">Priority</th>
+          <th class="p-3 text-left">Due</th>
           <th class="p-3 text-left">Created At</th>
           <th class="p-3 text-left">Actions</th>
         </tr>

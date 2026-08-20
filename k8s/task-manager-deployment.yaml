@@ -11,6 +11,10 @@ spec:
       app: task-manager
   template:
     metadata:
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "3000"
       labels:
         app: task-manager
     spec:

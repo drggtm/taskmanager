@@ -13,34 +13,72 @@ behave correctly when the database goes away.
 |---|---|
 | Runtime | Node.js 18 (alpine), Express 5 |
 | Data | MongoDB via Mongoose 8 |
-| Frontend | Static HTML + vanilla JS, Tailwind via CDN — list, add, delete |
+| Frontend | Static HTML + vanilla JS, Tailwind via CDN — list, add, complete, filter, delete |
 | Image | Multi-stage Docker build, runs as non-root `nodeuser` |
 | Packaging | Helm chart (`helm/task-manager`) |
 | CI | GitHub Actions → GitHub Container Registry |
+| Metrics | `/metrics` in Prometheus text format, no extra dependency |
 
 ## API
 
 | Method | Endpoint | Description | Success | Errors |
 |---|---|---|---|---|
-| GET | `/api/tasks` | List all tasks | 200 | 500 |
-| POST | `/api/tasks` | Create a task | 201 | 400 (missing title / malformed JSON) |
-| PATCH | `/api/tasks/:id` | Mark a task done / not done | 200 | 404 (not found), 400 (invalid id or non-boolean `done`) |
+| GET | `/api/tasks` | List tasks; `?done=true\|false` and `?q=` filter | 200 | 500 |
+| POST | `/api/tasks` | Create a task | 201 | 400 (missing title / bad field / malformed JSON) |
+| PATCH | `/api/tasks/:id` | Update any subset of the mutable fields | 200 | 404 (not found), 400 (invalid id, bad field, empty body) |
+| DELETE | `/api/tasks/completed` | Delete every done task, returns `{ "deleted": n }` | 200 | 500 |
 | DELETE | `/api/tasks/:id` | Delete a task | 204 | 404 (not found), 400 (invalid id) |
 | GET | `/healthz` | Liveness — process is up | 200 | — |
 | GET | `/readyz` | Readiness — MongoDB reachable | 200 | 503 |
+| GET | `/metrics` | Prometheus exposition | 200 | — |
 | GET | `/` | Static frontend | 200 | — |
 
-`POST` body: `{ "title": "required", "description": "optional" }`
-`PATCH` body: `{ "done": true }` — `done` is the only mutable field.
+Mutable fields, shared by `POST` and `PATCH`: `title` (non-empty string),
+`description` (string), `done` (boolean), `priority` (`low\|medium\|high`,
+default `medium`), `dueDate` (parseable date, or `null`/`""` to clear). Only
+`title` is required, and only on create. Anything else in the body is ignored;
+a field that is present but invalid is a 400 naming that field.
 
-The page at `/` drives all four: a form to add a task, a table listing them, a
-Done checkbox per row, and a Delete button per row. Rows are built with
-`textContent`, not `innerHTML`, so a task title containing markup is rendered as
-text rather than executed.
+Lists come back with pending tasks first, newest first within each group. `q`
+matches titles case-insensitively and is regex-escaped, so a search for `(*`
+returns nothing rather than erroring.
 
-Tasks created before this field existed have no `done` key in MongoDB. Mongoose
-reads a missing `done` as the schema default `false`, so old documents render as
-not-done without a migration.
+The page at `/` drives all of it: a form to add a task with priority and due
+date, filter buttons that hit `?done=`, a debounced search box that hits `?q=`,
+a Done checkbox per row, a Delete button per row, and Clear done for the bulk
+delete. Overdue tasks show their date in red. Rows are built with `textContent`,
+not `innerHTML`, so a task title containing markup is rendered as text rather
+than executed.
+
+Tasks created before `done`, `priority`, or `dueDate` existed have no such key in
+MongoDB. Mongoose reads a missing key as the schema default, so old documents
+render as not-done, medium priority, no due date, without a migration.
+
+### Metrics
+
+`/metrics` is written by hand rather than pulled from `prom-client`, so the image
+gains no dependency:
+
+| Metric | Type | Labels |
+|---|---|---|
+| `http_requests_total` | counter | `method`, `route`, `status` |
+| `http_request_duration_seconds_{sum,count}` | summary | `method`, `route`, `status` |
+| `process_uptime_seconds` | gauge | — |
+| `mongodb_up` | gauge | — |
+| `tasks_total` | gauge | `state` (`done`, `pending`) |
+
+`route` is the Express route pattern (`/api/tasks/:id`), never the raw path, so
+label cardinality is bounded by the route table instead of growing with every id
+a client asks for. Requests that match no route are counted as `other`.
+
+Counters live in process memory, so each replica reports its own — scrape them
+all and sum. `tasks_total` queries MongoDB only when the connection is ready: a
+scrape must never block behind a dead database, which is the same reason
+`/healthz` ignores MongoDB.
+
+Both the chart and the raw manifests annotate the pods for an annotation-based
+Prometheus (`prometheus.io/scrape`, `/path`, `/port`); set `metrics.enabled=false`
+to drop them.
 
 ### Why two health endpoints
 
@@ -109,6 +147,8 @@ helm install task-manager helm/task-manager --set mongodb.existingSecret=mongo-c
 | `mongodb.uri` | `mongodb://mongodb:27017/taskmanager` | Used only when `existingSecret` is empty |
 | `mongodb.existingSecret` | `""` | Reference a Secret managed outside the chart |
 | `mongodb.existingSecretKey` | `mongo-uri` | Key within that Secret |
+| `metrics.enabled` | `true` | Adds `prometheus.io/*` pod annotations |
+| `metrics.path` | `/metrics` | Scrape path in those annotations |
 | `probes.livenessPath` | `/healthz` | |
 | `probes.readinessPath` | `/readyz` | |
 | `resources` | 200m/256Mi → 500m/512Mi | Requests and limits |

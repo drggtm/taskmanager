@@ -17,6 +17,11 @@ spec:
         {{- /* Roll the pods when the generated Secret changes, so a new MONGO_URI
                actually reaches the containers instead of waiting for the next deploy. */}}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- if .Values.metrics.enabled }}
+        prometheus.io/scrape: "true"
+        prometheus.io/path: {{ .Values.metrics.path }}
+        prometheus.io/port: "{{ .Values.service.targetPort }}"
+        {{- end }}
       labels:
         {{- include "task-manager.selectorLabels" . | nindent 8 }}
     spec:

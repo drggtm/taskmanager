@@ -26,6 +26,11 @@ probes:
   livenessPath: /healthz
   readinessPath: /readyz
 
+# Pod annotations for a Prometheus that scrapes by annotation.
+metrics:
+  enabled: true
+  path: /metrics
+
 resources:
   limits:
     cpu: 500m
